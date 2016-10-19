@@ -1,0 +1,22 @@
+{
+  "name": "countly-observer",
+  "title": "Countly Observer",
+  "version": "0.0.1",
+  "description": "listener/notification plugin that'll notify the listener when a condition is met.",
+  "author": "Count.ly",
+  "homepage": "https://count.ly/plugins/",
+  "repository" :{ "type" : "git", "url" : "http://github.com/Countly/countly-server.git"},
+  "bugs":{ "url" : "http://github.com/Countly/countly-server/issues"},
+  "keywords": [
+    "countly",
+    "analytics",
+    "mobile",
+    "plugins",
+	"observer",
+    "listener",
+    "notification"
+  ],
+  "dependencies": {
+  },
+  "private": true
+}
