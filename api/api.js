@@ -106,6 +106,7 @@ if (cluster.isMaster) {
     setTimeout(() => {
         jobs.job('api:ping').replace().schedule('every 1 day');
         jobs.job('api:clear').replace().schedule('every 1 day');
+        jobs.job('notifier:daily').replace().schedule('every 1 day');
     }, 3000);
 } else {
 
