@@ -24,10 +24,6 @@ const plugins = require('../../pluginManager');
     && console.log(`Total session count reached ${Math.round(sessionCounter.count / 100)}0 for today`);
   };
 
-  const convertQueryStringToObject = (qString) => JSON.parse(
-    '{"' + decodeURI(qString).replace(/"/g, '\\"').replace(/&/g, '","').replace(/=/g, '":"') + '"}'
-  );
-
   plugins.register("/worker", ob => {
     common.dbUserMap['notifier'] = 'notf';
   });
