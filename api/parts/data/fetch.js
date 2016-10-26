@@ -417,6 +417,20 @@ var fetch = {},
 			common.returnOutput(params, countlySession.getSubperiodData());
         });
     };
+
+  fetch.fetchTotalSessionsForToday = function(params, callback) {
+    fetchTimeObj('users', params, false, function(usersDoc) {
+      getTotalUsersObj("users", params, function (dbTotalUsersObj) {
+        //countlyCommon.setPeriod(period);
+        countlySession.setDb(usersDoc || {});
+        countlySession.setTotalUsersObj(formatTotalUsersObj(dbTotalUsersObj));
+
+        var sessionData = countlySession.getSessionData();
+
+        callback(null, sessionData);
+      });
+    });
+  };
 	
 	fetch.fetchLoyalty = function(params) {
         fetchTimeObj("users", params, false, function(doc) {
