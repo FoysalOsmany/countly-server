@@ -1,0 +1,1 @@
+CountlyHelpers.createMetricModel(window.countlyNotifier = window.countlyNotifier || {}, {name: "notifier", estOverrideMetric: "notifier"}, jQuery);
