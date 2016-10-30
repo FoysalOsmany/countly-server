@@ -1,75 +1,81 @@
 window.NotifierView = countlyView.extend({
-  beforeRender: function() {
-    return $.when(countlyNotifier.initialize(), countlyTotalUsers.initialize("notifications")).then(function () {});
+  initialize:function () {
+    this.filter = (store.get("countly_pluginsfilter")) ? store.get("countly_pluginsfilter") : "plugins-all";
   },
-  renderCommon:function (isRefresh) {
-    var notifierData = countlyNotifier.getData();
-
-    this.templateData = {
-      "page-title":jQuery.i18n.map["notifier.title"],
-      "logo-class":"notifications",
-      "graph-type-double-pie":true,
-      "pie-titles":{
-        "left":jQuery.i18n.map["common.total-users"],
-        "right":jQuery.i18n.map["common.new-users"]
-      },
-      "chart-helper":"notifier.chart"
-    };
-
-    if (!isRefresh) {
-      $(this.el).html(this.template(this.templateData));
-      if(typeof addDrill != "undefined"){
-        $(".widget-header .left .title").after(addDrill("up.dnst"));
-      }
-
-      this.dtable = $('.d-table').dataTable($.extend({}, $.fn.dataTable.defaults, {
-        "aaData": notifierData.chartData,
-        "aoColumns": [
-          { "mData": "notifier", sType:"session-duration", "sTitle": jQuery.i18n.map["notifier.table.notifier"] },
-          { "mData": "t", sType:"formatted-num", "mRender":function(d) { return countlyCommon.formatNumber(d); }, "sTitle": jQuery.i18n.map["common.table.total-sessions"] },
-          { "mData": "u", sType:"formatted-num", "mRender":function(d) { return countlyCommon.formatNumber(d); }, "sTitle": jQuery.i18n.map["common.table.total-users"] },
-          { "mData": "n", sType:"formatted-num", "mRender":function(d) { return countlyCommon.formatNumber(d); }, "sTitle": jQuery.i18n.map["common.table.new-users"] }
-        ]
-      }));
-
-      $(".d-table").stickyTableHeaders();
-      countlyCommon.drawGraph(notifierData.chartDPTotal, "#dashboard-graph", "pie");
-      countlyCommon.drawGraph(notifierData.chartDPNew, "#dashboard-graph2", "pie");
+  beforeRender: function() {
+    if(this.template)
+      return $.when(countlyNotifier.initialize()).then(function (res) {alert(res.noSessionIn7Days)});
+    else{
+      var self = this;
+      return $.when($.get(countlyGlobal["path"]+'/notifier/templates/daily-notifications.html', function(src){
+        self.template = Handlebars.compile(src);
+      }), countlyNotifier.initialize()).then(function () {});
     }
   },
-  refresh:function () {
+  renderCommon:function (isRefresh) {
+    var notificationData = countlyNotifier.getData();
+    this.templateData = {
+      "page-title":jQuery.i18n.map["notifier.title"]
+    };
+
+    Object.assign(this.templateData, notificationData);
+
     var self = this;
-    $.when(this.beforeRender()).then(function () {
-      if (app.activeView != self) {
-        return false;
-      }
-      self.renderCommon(true);
+    if (!isRefresh) {
+      $(this.el).html(this.template(this.templateData));
+      $("#"+this.filter).addClass("selected").addClass("active");
+      $.fn.dataTableExt.afnFiltering.push(function( oSettings, aData, iDataIndex ) {
+        if(!$(oSettings.nTable).hasClass("plugins-filter"))
+          return true;
+        if(self.filter == "plugins-enabled") {
+          return aData[4]
+        }
+        if(self.filter == "plugins-disabled") {
+          return !aData[4]
+        }
+        return true;
+      });
 
-      newPage = $("<div>" + self.template(self.templateData) + "</div>");
-
-      $(self.el).find(".dashboard-summary").replaceWith(newPage.find(".dashboard-summary"));
-
-      var notifierData = countlyNotifier.getData();
-
-      countlyCommon.drawGraph(notifierData.chartDPTotal, "#dashboard-graph", "pie");
-      countlyCommon.drawGraph(notifierData.chartDPNew, "#dashboard-graph2", "pie");
-      CountlyHelpers.refreshTable(self.dtable, notifierData.chartData);
-    });
+      this.dtable = $('#notification-table').dataTable($.extend({}, $.fn.dataTable.defaults, {
+        "aaData": notificationData.users,
+        "aoColumns": [
+          { "mData": "userId", "sTitle": "UserID"},
+          { "mData": "cc", "sTitle": "Country"},
+          { "mData": "cty", "sTitle": "City"},
+          { "mData": "sc", "sTitle": "Total sessions"},
+          { "mData": "ls", "sTitle": "Last session"},
+          { "mData": "condition", "sTitle": "Condition"}
+        ]
+      }));
+      this.dtable.stickyTableHeaders();
+      this.dtable.fnSort( [ [0,'asc'] ] );
+    }
+  },
+  refresh:function (){
+  },
+  pushMsg:function (msg){
+    alert(msg);
+  },
+  filterPlugins: function(filter){
+    this.filter = filter;
+    store.set("countly_pluginsfilter", filter);
+    $("#"+this.filter).addClass("selected").addClass("active");
+    this.dtable.fnDraw();
   }
 });
 
 //register views
 app.notifierView = new NotifierView();
 
-app.route("/analytics/notifier", 'notifications', function () {
+app.route("/notifier", 'notifier', function () {
   this.renderWhenReady(this.notifierView);
 });
 
 $( document ).ready(function() {
-  var menu = '<a href="#/analytics/notifier" class="item">'+
-    '<div class="logo notifications"></div>'+
-    '<div class="text" data-localize="sidebar.analytics.notifications">Notifications</div>'+
+  var menu = '<a href="#/notifier" class="item notifications">'+
+    '<div class="logo notifications ion-android-notifications"></div>'+
+    '<div class="text" data-localize="notifier.title">Notifications</div>'+
     '</a>';
-  $('#mobile-type #analytics-submenu').append(menu);
-  $('#web-type #analytics-submenu').append(menu);
+
+  $('.sidebar-menu').append(menu);
 });
